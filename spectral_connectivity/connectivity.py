@@ -1,6 +1,6 @@
 from functools import lru_cache, partial, wraps
 from inspect import signature
-from itertools import combinations
+from itertools import combinations, permutations
 
 import numpy as np
 from scipy.fftpack import ifft
@@ -587,7 +587,72 @@ class Connectivity:
         return predictive_power
 
     def conditional_spectral_granger_prediction(self):
-        raise NotImplementedError
+        cross_spectral_matrix = self._expectation(
+            self._cross_spectral_matrix)
+        n_signals = cross_spectral_matrix.shape[-1]
+        n_frequencies = cross_spectral_matrix.shape[-3]
+        non_neg_index = np.arange(0, (n_frequencies + 1) // 2)
+        new_shape = list(cross_spectral_matrix.shape)
+        new_shape[-3] = non_neg_index.size
+        predictive_power = np.empty(new_shape[1:])
+        
+        sigarray = np.array(range(n_signals))
+
+        for ip in permutations(range(n_signals), 2):
+            ind1 = np.concatenate((ip, np.delete(sigarray, ip)))
+            ind2 = np.insert(ip[0:1], 1, np.delete(sigarray, ip))
+
+            try:
+                mphf1 = minimum_phase_decomposition(
+                    cross_spectral_matrix[
+                        ..., ind1, :][..., ind1])
+
+                inv_fr_coefs = ifft(mphf1, axis=-3).real
+                tf1 = np.squeeze(mphf1 @ np.linalg.inv(inv_fr_coefs[..., 0, :, :]))[non_neg_index, :, :]
+                nc1 = np.squeeze(inv_fr_coefs[..., 0, :, :] @ inv_fr_coefs[..., 0, :, :].swapaxes(-1,-2))
+
+                P1 = np.eye(n_signals)
+                P1[1:,0] = -nc1[1:,0]/nc1[0,0]
+                P11 = np.eye(n_signals)
+                P11[2:,1] = -(nc1[2:,1]-nc1[2:,0]*nc1[0,1]/nc1[0,0]) / (nc1[0,1]-nc1[1,0]*nc1[0,1]/nc1[0,0])
+                P1 = P11 @ P1
+                
+                tf1 = tf1 @ np.linalg.inv(P1)
+                nc1 = P1 @ nc1 @ P1.T
+
+                mphf2 = minimum_phase_decomposition(cross_spectral_matrix[...,ind2,:][...,ind2])
+
+                inv_fr_coefs = ifft(mphf2, axis=-3).real
+                tf2 = np.squeeze(mphf2 @ np.linalg.inv(inv_fr_coefs[..., 0, :, :]))[non_neg_index, :, :]
+                nc2 = np.squeeze(inv_fr_coefs[..., 0, :, :] @ np.swapaxes(inv_fr_coefs[..., 0, :, :],-1,-2))
+            
+                P2 = np.eye(n_signals-1)
+                P2[1:,0] = -nc2[1:,0]/nc2[0,0]
+
+                tf2 = tf2 @ np.linalg.inv(P2)
+                nc2 = P2 @ nc2 @ P2.T
+
+                tf2 = np.insert(tf2,1,0, axis=-1)
+                tf2 = np.insert(tf2,1,0, axis=-2)
+                tf2[...,1,1] = 1
+            
+                Q = np.linalg.inv(tf2) @ tf1
+
+                f = nc2[0,0]/np.abs(Q[...,0,0]*nc1[0,0]*Q[...,0,0].conjugate().T)
+                
+                predictive_power[..., ip[0], ip[1]] = f
+
+            except np.linalg.LinAlgError:
+                predictive_power[
+                    ..., ip[0], ip[1]] = np.nan
+
+        diagonal_ind = np.diag_indices(n_signals)
+        predictive_power[..., diagonal_ind[0], diagonal_ind[1]] = np.nan
+        
+        predictive_power[predictive_power <= 0] = np.nan
+
+        return np.log(predictive_power)
+
 
     def blockwise_spectral_granger_prediction(self):
         raise NotImplementedError
