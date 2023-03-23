@@ -596,7 +596,7 @@ class Connectivity:
         new_shape[-3] = non_neg_index.size
         predictive_power = np.empty(new_shape[1:])
         
-        sigarray = np.array(range(n_signals))
+        sigarray = np.arange(n_signals)
 
         for ip in permutations(range(n_signals), 2):
             ind1 = np.concatenate((ip, np.delete(sigarray, ip)))
@@ -623,7 +623,10 @@ class Connectivity:
                 mphf2 = minimum_phase_decomposition(cross_spectral_matrix[...,ind2,:][...,ind2])
 
                 inv_fr_coefs = ifft(mphf2, axis=-3).real
-                tf2 = np.squeeze(mphf2 @ np.linalg.inv(inv_fr_coefs[..., 0, :, :]))[non_neg_index, :, :]
+                try:
+                    tf2 = np.squeeze(mphf2 @ np.linalg.inv(inv_fr_coefs[..., 0, :, :]))[non_neg_index, :, :]
+                except IndexError:
+                    print("The input should consist of more than two time series.")
                 nc2 = np.squeeze(inv_fr_coefs[..., 0, :, :] @ np.swapaxes(inv_fr_coefs[..., 0, :, :],-1,-2))
             
                 P2 = np.eye(n_signals-1)
