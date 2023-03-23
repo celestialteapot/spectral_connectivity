@@ -1,40 +1,16 @@
-.. currentmodule:: spectral_connectivity
-
-###
 API
-###
+===
 
-spectral_connectivity package
-=============================
+.. automodule:: spectral_connectivity
 
-spectral_connectivity.connectivity module
------------------------------------------
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
 
-.. automodule:: spectral_connectivity.connectivity
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-spectral_connectivity.minimum_phase_decomposition module
---------------------------------------------------------
-
-.. automodule:: spectral_connectivity.minimum_phase_decomposition
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-spectral_connectivity.statistics module
----------------------------------------
-
-.. automodule:: spectral_connectivity.statistics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-spectral_connectivity.transforms module
----------------------------------------
-
-.. automodule:: spectral_connectivity.transforms
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   spectral_connectivity.connectivity
+   spectral_connectivity.minimum_phase_decomposition
+   spectral_connectivity.simulate
+   spectral_connectivity.statistics
+   spectral_connectivity.transforms
+   spectral_connectivity.wrapper

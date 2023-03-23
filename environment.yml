@@ -3,18 +3,22 @@ channels:
 - conda-forge
 - defaults
 dependencies:
-- numpy
+- numpy >= 1.11
 - matplotlib
 - scipy
 - xarray
 - nitime
-- pytest
+- "pytest >= 2.7.1"
 - pytest-cov
 - coveralls
 - setuptools
+- black
+- flake8
 - jupyter
 - numpydoc
 - sphinx
+- sphinx-copybutton
+- sphinx-autoapi
 - jupyter
 - jupyterlab
 - nb_conda
