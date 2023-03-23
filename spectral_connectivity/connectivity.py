@@ -3,7 +3,7 @@
 import os
 from functools import partial, wraps
 from inspect import signature
-from itertools import combinations
+from itertools import combinations, permutations
 from logging import getLogger
 
 import numpy as np
