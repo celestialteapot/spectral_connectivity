@@ -741,17 +741,18 @@ class Connectivity:
 
         return predictive_power
 
+    @_asnumpy
     def conditional_spectral_granger_prediction(self):
-        cross_spectral_matrix = self._expectation(
-            self._cross_spectral_matrix)
+        cross_spectral_matrix = self._expectation_cross_spectral_matrix()
         n_signals = cross_spectral_matrix.shape[-1]
         n_frequencies = cross_spectral_matrix.shape[-3]
-        non_neg_index = np.arange(0, (n_frequencies + 1) // 2)
+        non_neg_index = xp.arange(0, (n_frequencies + 1) // 2)
+
         new_shape = list(cross_spectral_matrix.shape)
         new_shape[-3] = non_neg_index.size
-        predictive_power = np.empty(new_shape[1:])
+        predictive_power = xp.empty(new_shape[1:])
         
-        sigarray = np.arange(n_signals)
+        sigarray = xp.arange(n_signals)
 
         for ip in permutations(range(n_signals), 2):
             ind1 = np.concatenate((ip, np.delete(sigarray, ip)))
@@ -759,8 +760,7 @@ class Connectivity:
 
             try:
                 mphf1 = minimum_phase_decomposition(
-                    cross_spectral_matrix[
-                        ..., ind1, :][..., ind1])
+                    cross_spectral_matrix[..., ind1, :][..., ind1])
 
                 inv_fr_coefs = ifft(mphf1, axis=-3).real
                 tf1 = np.squeeze(mphf1 @ np.linalg.inv(inv_fr_coefs[..., 0, :, :]))[non_neg_index, :, :]
@@ -775,7 +775,8 @@ class Connectivity:
                 tf1 = tf1 @ np.linalg.inv(P1)
                 nc1 = P1 @ nc1 @ P1.T
 
-                mphf2 = minimum_phase_decomposition(cross_spectral_matrix[...,ind2,:][...,ind2])
+                mphf2 = minimum_phase_decomposition(
+                    cross_spectral_matrix[...,ind2,:][...,ind2])
 
                 inv_fr_coefs = ifft(mphf2, axis=-3).real
                 try:
@@ -801,13 +802,12 @@ class Connectivity:
                 predictive_power[..., ip[0], ip[1]] = f
 
             except np.linalg.LinAlgError:
-                predictive_power[
-                    ..., ip[0], ip[1]] = np.nan
+                predictive_power[..., ip[0], ip[1]] = xp.nan
 
-        diagonal_ind = np.diag_indices(n_signals)
-        predictive_power[..., diagonal_ind[0], diagonal_ind[1]] = np.nan
+        diagonal_ind = xp.diag_indices(n_signals)
+        predictive_power[..., diagonal_ind[0], diagonal_ind[1]] = xp.nan
         
-        predictive_power[predictive_power <= 0] = np.nan
+        predictive_power[predictive_power <= 0] = xp.nan
 
         return np.log(predictive_power)
 
